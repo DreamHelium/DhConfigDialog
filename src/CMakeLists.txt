@@ -1,6 +1,6 @@
 find_package(ECM REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
-find_package(KF6 REQUIRED COMPONENTS ColorScheme ConfigWidgets I18n)
+find_package(KF6 REQUIRED COMPONENTS ConfigWidgets I18n)
 
 set(CMAKE_AUTOMOC ON)
 

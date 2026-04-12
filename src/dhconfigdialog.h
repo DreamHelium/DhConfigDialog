@@ -14,10 +14,7 @@ class DhHelpAssistant
 {
 public:
   virtual ~DhHelpAssistant () = default;
-  virtual void
-  applyHelp () const
-  {
-  }
+  virtual void applyHelp () const = 0;
 };
 
 using DhTemplateCreator = std::function<std::unique_ptr<DhConfigTemplate> (
@@ -52,7 +49,7 @@ public:
                            bool lazyLoading = false,
                            QWidget *parent = nullptr);
   ~DhConfigDialog () override;
-  void addAssistant (const DhHelpAssistant &&assistant);
+  void addAssistant (std::unique_ptr<DhHelpAssistant> &&assistant);
   void setIcon (const QString &group, const QIcon &icon);
   void addPages ();
   void addLongTextItems (const QString &str);
@@ -60,12 +57,14 @@ public:
   void addTemplateByItem (KConfigSkeletonItem *item,
                           const DhTemplateCreator &creator);
   void addTemplateByType (int type, const DhTemplateCreator &creator);
+  void show ();
 
 private:
+  bool loaded = false;
   KConfigSkeleton *config;
   QString configFileName;
   QFileSystemWatcher *watcher;
-  QList<DhHelpAssistant> assistants;
+  std::vector<std::unique_ptr<DhHelpAssistant>> assistants;
   QList<QString> groups;
 
   /* This comes first */

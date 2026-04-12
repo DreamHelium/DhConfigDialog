@@ -1,4 +1,5 @@
 #include "dhconfigdialog.h"
+#include <QCheckBox>
 #include <QDir>
 #include <QFileSystemWatcher>
 #include <QLabel>
@@ -7,7 +8,7 @@
 #include <QSpinBox>
 #include <QTextEdit>
 #include <QVBoxLayout>
-#include <libintl.h>
+#include <KLocalizedString>
 
 class DhIntConfigTemplate : public DhConfigTemplate
 {
@@ -164,6 +165,62 @@ public:
   }
 };
 
+class DhBoolConfigTemplate : public DhConfigTemplate
+{
+public:
+  DhBoolConfigTemplate (KConfigSkeletonItem *item, QVBoxLayout *layout,
+                        DhConfigDialog *dialog)
+      : DhConfigTemplate (item, layout, dialog)
+  {
+    DhBoolConfigTemplate::initWidget (layout, dialog);
+  }
+  void
+  initWidget (QVBoxLayout *layout, DhConfigDialog *dialog) override
+  {
+    bool value = item->property ().toBool ();
+
+    QString label = item->label ();
+    QString toolTip = item->toolTip ();
+    QCheckBox *checkBox = new QCheckBox (label);
+    checkBox->setToolTip (toolTip);
+
+    checkBox->setChecked (value);
+
+    layout->addWidget (checkBox);
+    widget = checkBox;
+    QObject::connect (checkBox, &QCheckBox::checkStateChanged, dialog,
+                      [dialog] { dialog->detect (); });
+  }
+  void
+  applyChange () const override
+  {
+    bool value = qobject_cast<QCheckBox *> (widget)->isChecked ();
+    item->setProperty (value);
+  }
+  [[nodiscard]] bool
+  detect () const override
+  {
+    auto checkBox = qobject_cast<QCheckBox *> (widget);
+    auto boxValue = checkBox->isChecked ();
+    auto itemValue = item->property ().toBool ();
+    if (boxValue != itemValue)
+      return true;
+    return false;
+  }
+  void
+  setDefault () const override
+  {
+    bool value = item->getDefault ().toBool ();
+    qobject_cast<QCheckBox *> (widget)->setChecked (value);
+  }
+  void
+  changeConfig () const override
+  {
+    bool value = item->property ().toBool ();
+    qobject_cast<QCheckBox *> (widget)->setChecked (value);
+  }
+};
+
 DhConfigDialog::DhConfigDialog (KConfigSkeleton *config,
                                 const QString &fileName, bool lazyLoading,
                                 QWidget *parent)
@@ -187,16 +244,19 @@ DhConfigDialog::DhConfigDialog (KConfigSkeleton *config,
   connect (button (QDialogButtonBox::Ok), &QPushButton::clicked, this,
            &DhConfigDialog::apply);
   if (!lazyLoading)
-    addPages ();
+    {
+      addPages ();
+      loaded = true;
+    }
 }
 
 DhConfigDialog::~DhConfigDialog () {}
 
 void
-DhConfigDialog::addAssistant (const DhHelpAssistant &&assistant)
+DhConfigDialog::addAssistant (std::unique_ptr<DhHelpAssistant> &&assistant)
 {
-  assistants.append (assistant);
-  assistant.applyHelp ();
+  assistant->applyHelp ();
+  assistants.emplace_back (std::move (assistant));
 }
 
 void
@@ -215,6 +275,8 @@ DhConfigDialog::setIcon (const QString &group, const QIcon &icon)
 void
 DhConfigDialog::addPages ()
 {
+  if (loaded)
+    return;
   QList<std::pair<QWidget *, QString>> internalWidgets;
   for (const auto &item : config->items ())
     {
@@ -239,8 +301,9 @@ DhConfigDialog::addPages ()
     {
       auto realWidget = get<QWidget *> (widget);
       auto realString = get<QString> (widget);
-      items.append (addPage (realWidget, gettext (realString.toUtf8 ())));
+      items.append (addPage (realWidget, i18n (realString.toUtf8 ())));
     }
+  loaded = true;
 }
 
 void
@@ -260,6 +323,14 @@ void
 DhConfigDialog::addTemplateByType (int type, const DhTemplateCreator &creator)
 {
   typeForTemplates.insert (type, creator);
+}
+
+void
+DhConfigDialog::show ()
+{
+  if (!loaded)
+    addPages ();
+  QWidget::show ();
 }
 
 void
@@ -288,6 +359,10 @@ DhConfigDialog::addWidget (KConfigSkeletonItem *item, QWidget *widget)
           templates.push_back (
               std::make_unique<DhStringConfigTemplate> (item, layout, this));
           break;
+        case QMetaType::Bool:
+          templates.push_back (
+              std::make_unique<DhBoolConfigTemplate> (item, layout, this));
+          break;
         default:
           break;
         }
@@ -301,7 +376,8 @@ DhConfigDialog::apply ()
     i->applyChange ();
   config->save ();
   for (const auto &assistant : assistants)
-    assistant.applyHelp ();
+    assistant->applyHelp ();
+  detect ();
 }
 
 void
@@ -309,7 +385,11 @@ DhConfigDialog::detect () const
 {
   bool enable = false;
   for (const auto &i : templates)
-    enable = i->detect () ? true : enable;
+    {
+      enable = i->detect () ? true : enable;
+      if (enable)
+        break;
+    }
   button (QDialogButtonBox::Apply)->setEnabled (enable);
 }
 
