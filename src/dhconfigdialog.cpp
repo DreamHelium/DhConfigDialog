@@ -1,4 +1,8 @@
 #include "dhconfigdialog.h"
+
+#include "dhconfigtemplates.h"
+
+#include <KLocalizedString>
 #include <QCheckBox>
 #include <QDir>
 #include <QFileSystemWatcher>
@@ -8,218 +12,6 @@
 #include <QSpinBox>
 #include <QTextEdit>
 #include <QVBoxLayout>
-#include <KLocalizedString>
-
-class DhIntConfigTemplate : public DhConfigTemplate
-{
-public:
-  DhIntConfigTemplate (KConfigSkeletonItem *item, QVBoxLayout *layout,
-                       DhConfigDialog *dialog)
-      : DhConfigTemplate (item, layout, dialog)
-  {
-    DhIntConfigTemplate::initWidget (layout, dialog);
-  }
-  void
-  initWidget (QVBoxLayout *layout, DhConfigDialog *dialog) override
-  {
-    int value = item->property ().toInt ();
-
-    QString label = item->label ();
-    QString toolTip = item->toolTip ();
-    QLabel *labelWidget = new QLabel (label);
-    QSpinBox *spinBox = new QSpinBox ();
-    spinBox->setToolTip (toolTip);
-
-    if (item->minValue ().isValid ())
-      spinBox->setMinimum (item->minValue ().toInt ());
-    if (item->maxValue ().isValid ())
-      spinBox->setMaximum (item->maxValue ().toInt ());
-    else
-      /* The default maximum number is 99 */
-      spinBox->setMaximum (INT_MAX);
-    spinBox->setValue (value);
-
-    QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->addWidget (labelWidget);
-    hlayout->addWidget (spinBox);
-    layout->addLayout (hlayout);
-    widget = spinBox;
-    QObject::connect (spinBox, &QSpinBox::valueChanged, dialog,
-                      [dialog] { dialog->detect (); });
-  }
-  void
-  applyChange () const override
-  {
-    int value = qobject_cast<QSpinBox *> (widget)->value ();
-    item->setProperty (value);
-  }
-  [[nodiscard]] bool
-  detect () const override
-  {
-    auto spinBox = qobject_cast<QSpinBox *> (widget);
-    auto boxValue = spinBox->value ();
-    auto itemValue = item->property ().toInt ();
-    if (boxValue != itemValue)
-      return true;
-    return false;
-  }
-  void
-  setDefault () const override
-  {
-    int value = item->getDefault ().toInt ();
-    qobject_cast<QSpinBox *> (widget)->setValue (value);
-  }
-  void
-  changeConfig () const override
-  {
-    int value = item->property ().toInt ();
-    qobject_cast<QSpinBox *> (widget)->setValue (value);
-  }
-};
-
-class DhStringConfigTemplate : public DhConfigTemplate
-{
-public:
-  DhStringConfigTemplate (KConfigSkeletonItem *item, QVBoxLayout *layout,
-                          DhConfigDialog *dialog)
-      : DhConfigTemplate (item, layout, dialog)
-  {
-    DhStringConfigTemplate::initWidget (layout, dialog);
-  }
-  void
-  initWidget (QVBoxLayout *layout, DhConfigDialog *dialog) override
-  {
-    auto value = item->property ().toString ();
-
-    QString label = item->label ();
-    QString toolTip = item->toolTip ();
-
-    QLabel *labelWidget = new QLabel (label);
-    bool useTextEdit = dialog->longTextItems.contains (item->key ());
-    QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->addWidget (labelWidget);
-
-    if (useTextEdit)
-      {
-        auto edit = new QTextEdit (value);
-        edit->setToolTip (toolTip);
-        hlayout->addWidget (edit);
-        widget = edit;
-        QObject::connect (edit, &QTextEdit::textChanged, dialog,
-                          [dialog] { dialog->detect (); });
-      }
-    else
-      {
-        auto edit = new QLineEdit (value);
-        edit->setToolTip (toolTip);
-        hlayout->addWidget (edit);
-        widget = edit;
-        QObject::connect (edit, &QLineEdit::textChanged, dialog,
-                          [dialog] { dialog->detect (); });
-      }
-    layout->addLayout (hlayout);
-  }
-  void
-  applyChange () const override
-  {
-    bool useTextEdit = dialog->longTextItems.contains (item->key ());
-    QString value;
-    if (useTextEdit)
-      value = qobject_cast<QTextEdit *> (widget)->toPlainText ();
-    else
-      value = qobject_cast<QLineEdit *> (widget)->text ();
-    item->setProperty (value);
-  }
-  [[nodiscard]] bool
-  detect () const override
-  {
-    bool useTextEdit = dialog->longTextItems.contains (item->key ());
-    QString value;
-    if (useTextEdit)
-      value = qobject_cast<QTextEdit *> (widget)->toPlainText ();
-    else
-      value = qobject_cast<QLineEdit *> (widget)->text ();
-    if (item->property ().toString () != value)
-      return true;
-    return false;
-  }
-  void
-  setDefault () const override
-  {
-    bool useTextEdit = dialog->longTextItems.contains (item->key ());
-    QString value = item->getDefault ().toString ();
-    if (useTextEdit)
-      qobject_cast<QTextEdit *> (widget)->setPlainText (value);
-    else
-      qobject_cast<QLineEdit *> (widget)->setText (value);
-  }
-  void
-  changeConfig () const override
-  {
-    bool useTextEdit = dialog->longTextItems.contains (item->key ());
-    QString value = item->property ().toString ();
-    if (useTextEdit)
-      qobject_cast<QTextEdit *> (widget)->setPlainText (value);
-    else
-      qobject_cast<QLineEdit *> (widget)->setText (value);
-  }
-};
-
-class DhBoolConfigTemplate : public DhConfigTemplate
-{
-public:
-  DhBoolConfigTemplate (KConfigSkeletonItem *item, QVBoxLayout *layout,
-                        DhConfigDialog *dialog)
-      : DhConfigTemplate (item, layout, dialog)
-  {
-    DhBoolConfigTemplate::initWidget (layout, dialog);
-  }
-  void
-  initWidget (QVBoxLayout *layout, DhConfigDialog *dialog) override
-  {
-    bool value = item->property ().toBool ();
-
-    QString label = item->label ();
-    QString toolTip = item->toolTip ();
-    QCheckBox *checkBox = new QCheckBox (label);
-    checkBox->setToolTip (toolTip);
-
-    checkBox->setChecked (value);
-
-    layout->addWidget (checkBox);
-    widget = checkBox;
-    QObject::connect (checkBox, &QCheckBox::checkStateChanged, dialog,
-                      [dialog] { dialog->detect (); });
-  }
-  void
-  applyChange () const override
-  {
-    bool value = qobject_cast<QCheckBox *> (widget)->isChecked ();
-    item->setProperty (value);
-  }
-  [[nodiscard]] bool
-  detect () const override
-  {
-    auto checkBox = qobject_cast<QCheckBox *> (widget);
-    auto boxValue = checkBox->isChecked ();
-    auto itemValue = item->property ().toBool ();
-    if (boxValue != itemValue)
-      return true;
-    return false;
-  }
-  void
-  setDefault () const override
-  {
-    bool value = item->getDefault ().toBool ();
-    qobject_cast<QCheckBox *> (widget)->setChecked (value);
-  }
-  void
-  changeConfig () const override
-  {
-    bool value = item->property ().toBool ();
-    qobject_cast<QCheckBox *> (widget)->setChecked (value);
-  }
-};
 
 DhConfigDialog::DhConfigDialog (KConfigSkeleton *config,
                                 const QString &fileName, bool lazyLoading,
@@ -334,6 +126,15 @@ DhConfigDialog::show ()
 }
 
 void
+DhConfigDialog::show (const QString &group)
+{
+  for (const auto &item : items)
+    if (item->name () == group)
+      setCurrentPage (item);
+  show ();
+}
+
+void
 DhConfigDialog::addWidget (KConfigSkeletonItem *item, QWidget *widget)
 {
   auto layout = qobject_cast<QVBoxLayout *> (widget->layout ());
@@ -362,6 +163,10 @@ DhConfigDialog::addWidget (KConfigSkeletonItem *item, QWidget *widget)
         case QMetaType::Bool:
           templates.push_back (
               std::make_unique<DhBoolConfigTemplate> (item, layout, this));
+          break;
+        case QMetaType::QColor:
+          templates.push_back (
+              std::make_unique<DhColorConfigTemplate> (item, layout, this));
           break;
         default:
           break;
@@ -401,6 +206,8 @@ DhConfigDialog::configChanged ()
     watcher->addPath (configFileName);
   for (const auto &i : templates)
     i->changeConfig ();
+  for (const auto &assistant : assistants)
+    assistant->applyHelp ();
 }
 
 void

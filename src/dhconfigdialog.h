@@ -58,6 +58,7 @@ public:
                           const DhTemplateCreator &creator);
   void addTemplateByType (int type, const DhTemplateCreator &creator);
   void show ();
+  void show (const QString &group);
 
 private:
   bool loaded = false;
