@@ -35,6 +35,12 @@ DhConfigDialog::DhConfigDialog (KConfigSkeleton *config,
            &DhConfigDialog::apply);
   connect (button (QDialogButtonBox::Ok), &QPushButton::clicked, this,
            &DhConfigDialog::apply);
+  connect (button (QDialogButtonBox::Cancel), &QPushButton::clicked, this,
+           [&]
+             {
+               for (const auto &i : templates)
+                 i->changeConfig ();
+             });
   if (!lazyLoading)
     {
       addPages ();
@@ -128,6 +134,8 @@ DhConfigDialog::show ()
 void
 DhConfigDialog::show (const QString &group)
 {
+  if (!loaded)
+    addPages ();
   for (const auto &item : items)
     if (item->name () == group)
       setCurrentPage (item);

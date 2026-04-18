@@ -59,7 +59,7 @@ public:
   void addTemplateByType (int type, const DhTemplateCreator &creator);
   void show ();
   void show (const QString &group);
-
+  std::vector<std::unique_ptr<DhConfigTemplate>> templates;
 private:
   bool loaded = false;
   KConfigSkeleton *config;
@@ -71,7 +71,7 @@ private:
   /* This comes first */
   QMap<KConfigSkeletonItem *, DhTemplateCreator> itemForTemplates;
   QMap<int, DhTemplateCreator> typeForTemplates;
-  std::vector<std::unique_ptr<DhConfigTemplate>> templates;
+
   // QList<DhConfigTemplate *> templates;
   QList<KPageWidgetItem *> items;
 
