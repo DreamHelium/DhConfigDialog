@@ -40,6 +40,7 @@ DhIntConfigTemplate::initWidget (QVBoxLayout *layout, DhConfigDialog *dialog)
   hlayout->addWidget (spinBox);
   layout->addLayout (hlayout);
   widget = spinBox;
+  hLayout = hlayout;
   QObject::connect (spinBox, &QSpinBox::valueChanged, dialog,
                     [dialog] { dialog->detect (); });
 }
@@ -116,6 +117,7 @@ DhStringConfigTemplate::initWidget (QVBoxLayout *layout,
       QObject::connect (edit, &QLineEdit::textChanged, dialog,
                         [dialog] { dialog->detect (); });
     }
+  hLayout = hlayout;
   layout->addLayout (hlayout);
 }
 
@@ -245,12 +247,13 @@ DhColorConfigTemplate::initWidget (QVBoxLayout *layout, DhConfigDialog *dialog)
   colorButton->setAlphaChannelEnabled (true);
 
   colorButton->setToolTip (toolTip);
-  auto hLayout = new QHBoxLayout();
+  auto hLayout = new QHBoxLayout ();
 
   hLayout->addWidget (labelWidget);
   hLayout->addWidget (colorButton);
   layout->addLayout (hLayout);
   widget = colorButton;
+  this->hLayout = hLayout;
   QObject::connect (colorButton, &KColorButton::changed, dialog,
                     [dialog] { dialog->detect (); });
 }

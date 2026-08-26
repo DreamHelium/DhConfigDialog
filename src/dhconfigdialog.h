@@ -38,6 +38,8 @@ public:
   QVBoxLayout *layout;
   DhConfigDialog *dialog;
   QWidget *widget = nullptr;
+  /* Optional */
+  QHBoxLayout *hLayout = nullptr;
 };
 
 class DhConfigDialog : public KPageDialog
@@ -60,6 +62,7 @@ public:
   void show ();
   void show (const QString &group);
   std::vector<std::unique_ptr<DhConfigTemplate>> templates;
+
 private:
   bool loaded = false;
   KConfigSkeleton *config;
