@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<kcfg
+    xmlns="http://www.kde.org/standards/kcfg/1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+                          http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+    <group name="General">
+        <entry name="TestInt" type="Int">
+            <label>Test Int</label>
+            <tooltip>Test int.</tooltip>
+            <default>50</default>
+        </entry>
+        <entry name="TestString" type="String">
+            <label>Test String</label>
+            <tooltip>Test string.</tooltip>
+            <default
+                code="true"
+            >QStandardPaths::writableLocation (QStandardPaths::CacheLocation)</default>
+        </entry>
+        <entry name="TestBool" type="Bool">
+            <label>Test Bool</label>
+            <tooltip>Test bool.</tooltip>
+            <default>false</default>
+        </entry>
+        <entry name="TestColor" type="Color">
+            <label>Test Color</label>
+            <tooltip>Test color.</tooltip>
+        </entry>
+    </group>
+</kcfg>

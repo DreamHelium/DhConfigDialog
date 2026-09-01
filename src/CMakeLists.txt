@@ -10,3 +10,5 @@ qt_add_library(dhconfigdialog SHARED
         dhconfigtemplates.h)
 
 target_link_libraries(dhconfigdialog PUBLIC KF6::ConfigWidgets KF6::I18n KF6::WidgetsAddons)
+
+

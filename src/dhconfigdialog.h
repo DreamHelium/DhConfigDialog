@@ -5,6 +5,7 @@
 #include <KConfigWatcher>
 #include <KPageDialog>
 #include <QFileSystemWatcher>
+#include <QLabel>
 #include <QList>
 #include <QVBoxLayout>
 
@@ -65,11 +66,13 @@ public:
 
 private:
   bool loaded = false;
+  QString fileName;
   KConfigSkeleton *config;
   QString configFileName;
   QFileSystemWatcher *watcher;
   std::vector<std::unique_ptr<DhHelpAssistant>> assistants;
   QList<QString> groups;
+  QList<QLabel *> labels;
 
   /* This comes first */
   QMap<KConfigSkeletonItem *, DhTemplateCreator> itemForTemplates;
@@ -87,6 +90,7 @@ private Q_SLOTS:
   void apply ();
   void configChanged ();
   void setDefaults ();
+  void changeDir (const QString &path);
 };
 
 #endif // DHLRC_DHCONFIGDIALOG_H

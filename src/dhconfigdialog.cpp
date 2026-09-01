@@ -4,6 +4,7 @@
 
 #include <KLocalizedString>
 #include <QCheckBox>
+#include <QDesktopServices>
 #include <QDir>
 #include <QFileSystemWatcher>
 #include <QLabel>
@@ -12,11 +13,17 @@
 #include <QSpinBox>
 #include <QTextEdit>
 #include <QVBoxLayout>
+#include <qboxlayout.h>
+#include <qdesktopservices.h>
+#include <qfilesystemwatcher.h>
+#include <qlabel.h>
+#include <qobject.h>
+#include <qpushbutton.h>
 
 DhConfigDialog::DhConfigDialog (KConfigSkeleton *config,
                                 const QString &fileName, bool lazyLoading,
                                 QWidget *parent)
-    : KPageDialog (parent), config (config)
+    : KPageDialog (parent), config (config), fileName (fileName)
 {
   configFileName = QStandardPaths::locate (
       QStandardPaths::GenericConfigLocation, fileName);
@@ -99,9 +106,39 @@ DhConfigDialog::addPages ()
     {
       auto realWidget = get<QWidget *> (widget);
       auto realString = get<QString> (widget);
+      auto label = new QLabel;
+      if (!configFileName.isEmpty ())
+        label->setText (configFileName);
+      else
+        {
+          label->setText ("Unknown!");
+          labels.append (label);
+        }
+      label->setStyleSheet ("color:gray;");
+      auto btn = new QPushButton ();
+      btn->setIcon (QIcon::fromTheme ("folder-open"));
+      connect (btn, &QPushButton::clicked, this,
+               [this]
+                 {
+                   if (!configFileName.isEmpty ())
+                     QDesktopServices::openUrl (configFileName);
+                 });
+      auto layout = new QHBoxLayout ();
+      layout->addWidget (label);
+      layout->addStretch ();
+      layout->addWidget (btn);
+      qobject_cast<QVBoxLayout *> (realWidget->layout ())->addStretch ();
+      qobject_cast<QVBoxLayout *> (realWidget->layout ())->addLayout (layout);
       items.append (addPage (realWidget, i18n (realString.toUtf8 ())));
     }
   loaded = true;
+}
+
+void
+DhConfigDialog::changeDir (const QString &path)
+{
+  for (const auto &i : labels)
+    i->setText (path);
 }
 
 void
@@ -210,7 +247,15 @@ void
 DhConfigDialog::configChanged ()
 {
   config->load ();
-  if (!watcher->files ().contains (configFileName))
+  if (configFileName.isEmpty ())
+    {
+      configFileName = QStandardPaths::locate (
+          QStandardPaths::GenericConfigLocation, fileName);
+      if (!configFileName.isEmpty ())
+        changeDir (configFileName);
+    }
+  if (!watcher->files ().contains (configFileName)
+      && !configFileName.isEmpty ())
     watcher->addPath (configFileName);
   for (const auto &i : templates)
     i->changeConfig ();
