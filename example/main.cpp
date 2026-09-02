@@ -1,12 +1,15 @@
 #include "../src/dhconfigdialog.h"
 #include "settings.h"
+#include <KLocalizedString>
 #include <QApplication>
 
 int
 main (int argc, char *argv[])
 {
   QApplication app (argc, argv);
-  DhConfigDialog dialog (DhConfig::self (), "example_dhcdrc");
+  /* Without this example will complain */
+  KLocalizedString::setApplicationDomain ("exampledhcd");
+  DhConfigDialog dialog (DhConfig::self ());
   dialog.show ();
   return app.exec ();
 }

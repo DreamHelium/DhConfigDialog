@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QList>
 #include <QVBoxLayout>
+#include <qwidget.h>
 
 class DhConfigTemplate;
 class DhConfigDialog;
@@ -51,6 +52,8 @@ public:
   explicit DhConfigDialog (KConfigSkeleton *config, const QString &fileName,
                            bool lazyLoading = false,
                            QWidget *parent = nullptr);
+  DhConfigDialog (KConfigSkeleton *config, bool lazyLoading = false,
+                  QWidget *parent = nullptr);
   ~DhConfigDialog () override;
   void addAssistant (std::unique_ptr<DhHelpAssistant> &&assistant);
   void setIcon (const QString &group, const QIcon &icon);
@@ -62,6 +65,7 @@ public:
   void addTemplateByType (int type, const DhTemplateCreator &creator);
   void show ();
   void show (const QString &group);
+  bool lazyLoading;
   std::vector<std::unique_ptr<DhConfigTemplate>> templates;
 
 private:
@@ -82,6 +86,7 @@ private:
   QList<KPageWidgetItem *> items;
 
   void addWidget (KConfigSkeletonItem *item, QWidget *widget);
+  void init ();
 
 public:
   Q_SLOT void detect () const;

@@ -13,6 +13,7 @@
 #include <QSpinBox>
 #include <QTextEdit>
 #include <QVBoxLayout>
+#include <qapplication.h>
 #include <qboxlayout.h>
 #include <qdesktopservices.h>
 #include <qfilesystemwatcher.h>
@@ -23,11 +24,29 @@
 DhConfigDialog::DhConfigDialog (KConfigSkeleton *config,
                                 const QString &fileName, bool lazyLoading,
                                 QWidget *parent)
-    : KPageDialog (parent), config (config), fileName (fileName)
+    : KPageDialog (parent), config (config), fileName (fileName),
+      lazyLoading (lazyLoading)
+{
+  init ();
+}
+
+DhConfigDialog::DhConfigDialog (KConfigSkeleton *config, bool lazyLoading,
+                                QWidget *parent)
+    : KPageDialog (parent), config (config), lazyLoading (lazyLoading)
+{
+  fileName = qApp->applicationName () + "rc";
+  init ();
+}
+
+void
+DhConfigDialog::init ()
 {
   configFileName = QStandardPaths::locate (
       QStandardPaths::GenericConfigLocation, fileName);
-  watcher = new QFileSystemWatcher ({ configFileName }, this);
+  if (!configFileName.isEmpty ())
+    watcher = new QFileSystemWatcher ({ configFileName }, this);
+  else
+    watcher = new QFileSystemWatcher (this);
   connect (watcher, &QFileSystemWatcher::fileChanged, this,
            &DhConfigDialog::configChanged);
   connect (config, &KConfigSkeleton::configChanged, this,
