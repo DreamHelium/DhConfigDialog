@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QList>
 #include <QVBoxLayout>
+#include <kconfigskeleton.h>
 #include <qwidget.h>
 
 class DhConfigTemplate;
@@ -49,11 +50,10 @@ class DhConfigDialog : public KPageDialog
   Q_OBJECT
 public:
   /* If lazy loading is enabled, you must load pages later. */
-  explicit DhConfigDialog (KConfigSkeleton *config, const QString &fileName,
+  explicit DhConfigDialog (KConfigSkeleton *config,
+                           const QString &fileName = {},
                            bool lazyLoading = false,
                            QWidget *parent = nullptr);
-  DhConfigDialog (KConfigSkeleton *config, bool lazyLoading = false,
-                  QWidget *parent = nullptr);
   ~DhConfigDialog () override;
   void addAssistant (std::unique_ptr<DhHelpAssistant> &&assistant);
   void setIcon (const QString &group, const QIcon &icon);
@@ -63,6 +63,11 @@ public:
   void addTemplateByItem (KConfigSkeletonItem *item,
                           const DhTemplateCreator &creator);
   void addTemplateByType (int type, const DhTemplateCreator &creator);
+  /** If dialog was created, just return. */
+  static void initDialog (KConfigSkeleton *config,
+                          const QString &fileName = {},
+                          bool lazyLoading = false, QWidget *parent = nullptr);
+  static DhConfigDialog *instance ();
   void show ();
   void show (const QString &group);
   bool lazyLoading;

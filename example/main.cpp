@@ -9,7 +9,7 @@ main (int argc, char *argv[])
   QApplication app (argc, argv);
   /* Without this example will complain */
   KLocalizedString::setApplicationDomain ("exampledhcd");
-  DhConfigDialog dialog (DhConfig::self ());
-  dialog.show ();
+  DhConfigDialog::initDialog (DhConfig::self ());
+  DhConfigDialog::instance ()->show ();
   return app.exec ();
 }

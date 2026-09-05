@@ -20,6 +20,20 @@
 #include <qlabel.h>
 #include <qobject.h>
 #include <qpushbutton.h>
+#include <stdexcept>
+
+class DhConfigDialogHelper
+{
+public:
+  DhConfigDialogHelper () : dialog (nullptr) {}
+  ~DhConfigDialogHelper ()
+  {
+    delete dialog;
+    dialog = nullptr;
+  }
+  DhConfigDialog *dialog;
+};
+Q_GLOBAL_STATIC (DhConfigDialogHelper, helper)
 
 DhConfigDialog::DhConfigDialog (KConfigSkeleton *config,
                                 const QString &fileName, bool lazyLoading,
@@ -27,14 +41,8 @@ DhConfigDialog::DhConfigDialog (KConfigSkeleton *config,
     : KPageDialog (parent), config (config), fileName (fileName),
       lazyLoading (lazyLoading)
 {
-  init ();
-}
-
-DhConfigDialog::DhConfigDialog (KConfigSkeleton *config, bool lazyLoading,
-                                QWidget *parent)
-    : KPageDialog (parent), config (config), lazyLoading (lazyLoading)
-{
-  fileName = qApp->applicationName () + "rc";
+  if (fileName.isEmpty ())
+    this->fileName = qApp->applicationName () + "rc";
   init ();
 }
 
@@ -72,6 +80,33 @@ DhConfigDialog::init ()
       addPages ();
       loaded = true;
     }
+}
+
+void
+DhConfigDialog::initDialog (KConfigSkeleton *config, const QString &fileName,
+                            bool lazyLoading, QWidget *parent)
+{
+  if (helper->dialog)
+    return;
+  helper->dialog = new DhConfigDialog (config, fileName, lazyLoading, parent);
+  /* Delete the dialog before QApplication's event dispatcher is torn down,
+   * otherwise the QFileSystemWatcher's QBasicTimer will complain that the
+   * event dispatcher has already been destroyed. */
+  QObject::connect (qApp, &QCoreApplication::aboutToQuit, qApp,
+                    [dialog = helper->dialog]
+                      {
+                        delete dialog;
+                        helper->dialog = nullptr;
+                      });
+}
+
+DhConfigDialog *
+DhConfigDialog::instance ()
+{
+  if (!helper->dialog)
+    throw std::logic_error ("An instance should be initialized first by "
+                            "initDialog(), this is a programming error.");
+  return helper->dialog;
 }
 
 DhConfigDialog::~DhConfigDialog () {}
