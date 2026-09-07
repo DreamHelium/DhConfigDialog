@@ -49,8 +49,11 @@ DhConfigDialog::DhConfigDialog (KConfigSkeleton *config,
 void
 DhConfigDialog::init ()
 {
-  configFileName = QStandardPaths::locate (
-      QStandardPaths::GenericConfigLocation, fileName);
+  if (fileName.contains ('/') || fileName.contains ('\\'))
+    configFileName = fileName;
+  else
+    configFileName = QStandardPaths::locate (
+        QStandardPaths::GenericConfigLocation, fileName);
   if (!configFileName.isEmpty ())
     watcher = new QFileSystemWatcher ({ configFileName }, this);
   else
@@ -129,6 +132,12 @@ DhConfigDialog::setIcon (const QString &group, const QIcon &icon)
           break;
         }
     }
+}
+
+void
+DhConfigDialog::setSaveWhenAccepted (bool value)
+{
+  saveWhenAccepted = value;
 }
 
 void
@@ -278,7 +287,8 @@ DhConfigDialog::apply ()
 {
   for (const auto &i : templates)
     i->applyChange ();
-  config->save ();
+  if (saveWhenAccepted)
+    config->save ();
   for (const auto &assistant : assistants)
     assistant->applyHelp ();
   detect ();
@@ -289,11 +299,11 @@ DhConfigDialog::detect () const
 {
   bool enable = false;
   for (const auto &i : templates)
-    {
-      enable = i->detect () ? true : enable;
-      if (enable)
+    if (i->detect ())
+      {
+        enable = true;
         break;
-    }
+      }
   button (QDialogButtonBox::Apply)->setEnabled (enable);
 }
 

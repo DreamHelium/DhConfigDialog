@@ -72,9 +72,11 @@ public:
   void show (const QString &group);
   bool lazyLoading;
   std::vector<std::unique_ptr<DhConfigTemplate>> templates;
+  void setSaveWhenAccepted (bool value);
 
 private:
   bool loaded = false;
+  bool saveWhenAccepted = true;
   QString fileName;
   KConfigSkeleton *config;
   QString configFileName;
