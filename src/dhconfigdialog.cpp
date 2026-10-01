@@ -7,6 +7,7 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QFileSystemWatcher>
+#include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -65,9 +66,23 @@ DhConfigDialog::init ()
   setStandardButtons (QDialogButtonBox::RestoreDefaults
                       | QDialogButtonBox::Apply | QDialogButtonBox::Ok
                       | QDialogButtonBox::Cancel);
+  /* A fifth button: the standard set has no way to throw away what has been
+   * typed without also closing the window, and "went back to the file" is a
+   * different thing from "went back to the built-in defaults". */
+  reloadButton = new QPushButton (i18n ("&Reload"), this);
+  /* `document-revert` rather than `view-refresh`: the button goes back to what
+   * is already on disk, it does not fetch anything new. `document-revert` says
+   * exactly that, which is the same distinction the label draws against
+   * RestoreDefaults. */
+  reloadButton->setIcon (
+      QIcon::fromTheme (QStringLiteral ("document-revert")));
+  addActionButton (reloadButton);
   button (QDialogButtonBox::Apply)->setEnabled (false);
   connect (button (QDialogButtonBox::RestoreDefaults), &QPushButton::clicked,
            this, &DhConfigDialog::setDefaults);
+  if (reloadButton)
+    connect (reloadButton, &QPushButton::clicked, this,
+             &DhConfigDialog::reload);
   connect (button (QDialogButtonBox::Apply), &QPushButton::clicked, this,
            &DhConfigDialog::apply);
   connect (button (QDialogButtonBox::Ok), &QPushButton::clicked, this,
@@ -332,4 +347,22 @@ DhConfigDialog::setDefaults ()
 {
   for (const auto &i : templates)
     i->setDefault ();
+}
+
+void
+DhConfigDialog::reload ()
+{
+  /* Read the file again and put what it says back into every control.
+   *
+   * This is the way back from a change that has been typed but not applied,
+   * which neither Apply (it goes forward) nor RestoreDefaults (it goes to the
+   * compiled-in defaults) offers. It is also what makes the dialog usable when
+   * the file changed on disk underneath it: the watcher's own path only runs
+   * `configChanged ()` when the file is edited elsewhere, not on demand. */
+  config->load ();
+  for (const auto &i : templates)
+    i->changeConfig ();
+  for (const auto &assistant : assistants)
+    assistant->applyHelp ();
+  detect ();
 }

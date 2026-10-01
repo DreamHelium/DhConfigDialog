@@ -7,6 +7,7 @@
 #include <QFileSystemWatcher>
 #include <QLabel>
 #include <QList>
+#include <QPushButton>
 #include <QVBoxLayout>
 #include <kconfigskeleton.h>
 #include <qwidget.h>
@@ -81,6 +82,7 @@ private:
   KConfigSkeleton *config;
   QString configFileName;
   QFileSystemWatcher *watcher;
+  QPushButton *reloadButton = nullptr;
   std::vector<std::unique_ptr<DhHelpAssistant>> assistants;
   QList<QString> groups;
   QList<QLabel *> labels;
@@ -102,6 +104,9 @@ private Q_SLOTS:
   void apply ();
   void configChanged ();
   void setDefaults ();
+  /* Re-reads the config file and puts its values back into every control,
+   * discarding changes that have been typed but not applied. */
+  void reload ();
   void changeDir (const QString &path);
 };
 
